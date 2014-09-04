@@ -1,0 +1,10 @@
+#include "check_scarf.h"
+
+CCheck_Scarf::CCheck_Scarf()
+{
+}
+ 
+CCheck_Scarf::~CCheck_Scarf()
+{
+}
+

@@ -1,0 +1,11 @@
+#ifndef _CHECK_SCARF_H
+#define _CHECK_SCARF_H
+
+class CCheck_Scarf
+{
+  public:
+    CCheck_Scarf();
+    ~CCheck_Scarf();
+};
+
+#endif
