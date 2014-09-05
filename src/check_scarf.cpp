@@ -2,19 +2,19 @@
 #include <opencv2/opencv.hpp>
 #include "check_scarf.h"
 
-
 CheckScarf::CheckScarf()
 {
 	Marker_Centroid.U = -1;
 	Marker_Centroid.V = -1;
 	Dist_MS = -1;
+	There_Is_Marker = false;
+	There_Is_Scarf = false;
+	Img_Refreshed = false;
 }
-
 
 CheckScarf::~CheckScarf()
 {
 }
-
 
 void CheckScarf::capture_image()
 {
@@ -28,13 +28,14 @@ void CheckScarf::capture_image()
 
 	// Read a new frame from video
 	while (!cap.read(Img_rgb))
-		std::cout << "Cannot read a frame from video stream" << std::endl;
+		std::
+		    cout << "Cannot read a frame from video stream" <<
+		    std::endl;
 
 }
 
-
 void CheckScarf::image_color_segmentation(int const HSV[6],
-			cv::Mat & imgThresholded)
+					  cv::Mat & imgThresholded)
 {
 
 	cv::Mat imgHSV;
@@ -60,7 +61,6 @@ void CheckScarf::image_color_segmentation(int const HSV[6],
 
 }
 
-
 void calc_centroid(cv::Mat & I, int &Cu, int &Cv)
 {
 
@@ -73,7 +73,6 @@ void calc_centroid(cv::Mat & I, int &Cu, int &Cv)
 	cv::circle(I, cv::Point(Cu, Cv), 5, cv::Scalar(128, 128, 128), 2, 8, 0);
 
 }
-
 
 int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 {
@@ -100,7 +99,6 @@ int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 
 }
 
-
 int CheckScarf::check_scarf()
 {
 	// Colors definition 
@@ -114,31 +112,87 @@ int CheckScarf::check_scarf()
 
 	// Color segmentation
 	image_color_segmentation(Colors_HSV_Detect[0], Img_thres_Marker);
+	There_Is_Marker = (cv::countNonZero(Img_thres_Marker) > 0);
 	image_color_segmentation(Colors_HSV_Detect[1], Img_thres_Scarf);
+	There_Is_Scarf = (cv::countNonZero(Img_thres_Scarf) > 0);
 
-	// Vertical Marker-Scarf distance
-	Dist_MS =
-	    calc_mark_scarf_distance(Img_thres_Marker, Img_thres_Scarf,
-				     Marker_Centroid.U, Marker_Centroid.V);
+	// Calc Distances 
+	if (There_Is_Marker and There_Is_Scarf) {
+		// Vertical Marker-Scarf distance
+		Dist_MS =
+		    calc_mark_scarf_distance(Img_thres_Marker, Img_thres_Scarf,
+					     Marker_Centroid.U,
+					     Marker_Centroid.V);
+	}
+	else if (!There_Is_Marker and ! There_Is_Scarf)
+		Dist_MS = -2;
+	else if (!There_Is_Marker)
+		Dist_MS = -3;
+	else if (!There_Is_Scarf)
+		Dist_MS = -4;
+
+	//New image processed
+	Img_Refreshed = true;
 
 	return Dist_MS;
 
 }
 
-
 void CheckScarf::draw_info()
 {
+
+	if (!Img_Refreshed) {
+		std::
+		    cout << "Before Draw refresh Image!! check_scarf()" << std::
+		    endl;
+		return;
+	}
+
 	/// Little bit of drawing to have some feedback
-	// Distance Mark to Scarf
-	cv::line(Img_rgb, cv::Point(Marker_Centroid.U, Marker_Centroid.V),
-		 cv::Point(Marker_Centroid.U, Marker_Centroid.V + Dist_MS), 0,
-		 2, 8, 0);
-	std::stringstream ss;
-	ss << Dist_MS << "px";
-	putText(Img_rgb, ss.str(),
-		cv::Point(Marker_Centroid.U + 5,
-			  Marker_Centroid.V + Dist_MS / 2),
-		cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
+
+	if (There_Is_Marker and There_Is_Scarf) {
+		// Distance Mark to Scarf
+		cv::line(Img_rgb,
+			 cv::Point(Marker_Centroid.U, Marker_Centroid.V),
+			 cv::Point(Marker_Centroid.U,
+				   Marker_Centroid.V + Dist_MS), 0, 2, 8, 0);
+		std::stringstream ss;
+		ss << Dist_MS << "px";
+		putText(Img_rgb, ss.str(),
+			cv::Point(Marker_Centroid.U + 5,
+				  Marker_Centroid.V + Dist_MS / 2),
+			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
+	}
+	else if (!There_Is_Marker and ! There_Is_Scarf) {
+		std::stringstream ss;
+		ss << "Neither Marker nor Scarf are found";
+		cv::Size textsize =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 1, 2, 0);
+		cv::Point org((Img_rgb.cols - textsize.width) / 2,
+			      (Img_rgb.rows - textsize.height) / 2);
+		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 1, 0,
+			2, 8, false);
+	}
+	else if (!There_Is_Marker) {
+		std::stringstream ss;
+		ss << "Marker not found";
+		cv::Size textsize =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 1, 2, 0);
+		cv::Point org((Img_rgb.cols - textsize.width) / 2,
+			      (Img_rgb.rows - textsize.height) / 2);
+		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 1, 0,
+			2, 8, false);
+	}
+	else if (!There_Is_Scarf) {
+		std::stringstream ss;
+		ss << "Scarf not found";
+		cv::Size textsize =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 1, 2, 0);
+		cv::Point org((Img_rgb.cols - textsize.width) / 2,
+			      (Img_rgb.rows - textsize.height) / 2);
+		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 1, 0,
+			2, 8, false);
+	}
 
 	// Show image thresholded 
 	cv::imshow("Thresholded Image Mark", Img_thres_Marker);
@@ -147,8 +201,10 @@ void CheckScarf::draw_info()
 	// Show Original image with drawing
 	cv::imshow("Original", Img_rgb);
 
-}
+	// Once is showed, capture a new one
+	Img_Refreshed = false;
 
+}
 
 int CheckScarf::wait_any_key()
 {
@@ -157,11 +213,8 @@ int CheckScarf::wait_any_key()
 	return 0;
 }
 
-
-int CheckScarf::wait()
+int CheckScarf::wait(int ms)
 {
-	cv::waitKey(2000);
+	cv::waitKey(ms);
 	return 0;
 }
-
-

@@ -16,23 +16,29 @@ class CheckScarf {
 	//Distance between marker and scarf
 	int Dist_MS;
 
-
 	//Images
-	cv::Mat Img_rgb;
-	cv::Mat Img_thres_Marker;
-	cv::Mat Img_thres_Scarf;
+	 cv::Mat Img_rgb;
+	 cv::Mat Img_thres_Marker;
+	 cv::Mat Img_thres_Scarf;
+
+	//Bools to know if we have elements
+	bool There_Is_Marker;
+	bool There_Is_Scarf;
+	bool Img_Refreshed;
 
 	//Functions
 	void capture_image();
-	void image_color_segmentation(int const HSV[6], cv::Mat & imgThresholded);
+	void image_color_segmentation(int const HSV[6],
+				      cv::Mat & imgThresholded);
 
  public:
+
 	 CheckScarf();
 	~CheckScarf();
 	int check_scarf();
 	void draw_info();
 	int wait_any_key();
-	int wait();
+	int wait(int ms);
 
 };
 
