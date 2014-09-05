@@ -1,5 +1,3 @@
-#include <iostream>
-#include <opencv2/opencv.hpp>
 #include "check_scarf.h"
 
 CheckScarf::CheckScarf()
@@ -9,6 +7,7 @@ CheckScarf::CheckScarf()
 	Dist_MS = -1;
 	There_Is_Marker = false;
 	There_Is_Scarf = false;
+	Scarf_around_Neck = false;
 	Img_Refreshed = false;
 }
 
@@ -28,8 +27,7 @@ void CheckScarf::capture_image()
 
 	// Read a new frame from video
 	while (!cap.read(Img_rgb))
-		std::
-		    cout << "Cannot read a frame from video stream" <<
+		std::cout << "Cannot read a frame from video stream" <<
 		    std::endl;
 
 }
@@ -74,6 +72,18 @@ void calc_centroid(cv::Mat & I, int &Cu, int &Cv)
 
 }
 
+void Check_Rect_Values(cv::Rect Neck_Rect, int rows, int cols)
+{
+	if (Neck_Rect.x < 0)
+		Neck_Rect.x = 0;
+	if (Neck_Rect.y < 0)
+		Neck_Rect.y = 0;
+	if (Neck_Rect.width > cols)
+		Neck_Rect.width = cols;
+	if (Neck_Rect.height > rows)
+		Neck_Rect.height = rows;
+}
+
 int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 {
 	calc_centroid(I_M, Cu, Cv);
@@ -99,13 +109,48 @@ int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 
 }
 
-int CheckScarf::check_scarf()
+bool CheckScarf::is_scarf_around_neck()
+{
+
+	int nRows = Neck_Rect.y + Neck_Rect.height;
+	int channels = Img_thres_Scarf.channels();
+	int nCols = (Neck_Rect.x + Neck_Rect.width) * channels;
+	bool trobat = false;
+	uchar *p;
+	int i = Neck_Rect.y;
+
+	// Trying to find a stright horizontal white line
+	while (i < nRows and ! trobat) {
+		p = Img_thres_Scarf.ptr < uchar > (i);
+		int j = Neck_Rect.x;
+		bool black_px = false;
+
+		while (j < nCols and ! trobat and ! black_px) {
+			if (p[j] == 0)
+				black_px = true;
+			//p[j] = 128;           //To Debug
+			j++;
+		}
+
+		if (!black_px)
+			trobat = true;
+		i++;
+	}
+
+	return trobat;
+
+}
+
+void CheckScarf::check_scarf(std::vector < int >&output)
 {
 	// Colors definition 
 	int const Colors_HSV_Detect[2][6] = {	//LowH HighH LowS HighS LowV HighV
 		149, 179, 0, 255, 160, 255,	//Marker Fucsia 
 		25, 45, 100, 255, 40, 200	//Scarf Green 
 	};
+
+	// Init output var
+	output.resize(2);
 
 	// Capturing camera image 
 	capture_image();
@@ -116,25 +161,40 @@ int CheckScarf::check_scarf()
 	image_color_segmentation(Colors_HSV_Detect[1], Img_thres_Scarf);
 	There_Is_Scarf = (cv::countNonZero(Img_thres_Scarf) > 0);
 
-	// Calc Distances 
+	// Processing Image 
 	if (There_Is_Marker and There_Is_Scarf) {
+
 		// Vertical Marker-Scarf distance
 		Dist_MS =
 		    calc_mark_scarf_distance(Img_thres_Marker, Img_thres_Scarf,
 					     Marker_Centroid.U,
 					     Marker_Centroid.V);
+
+		/// Checking if Scarf is around the Neck
+		// Init neck ROI
+		Neck_Rect.x = Marker_Centroid.U - 40;
+		Neck_Rect.y = Marker_Centroid.V + 40;
+		Neck_Rect.width = 80;
+		Neck_Rect.height = 150;
+		// Check if ROI is OK to Prevent segmentation fault
+		Check_Rect_Values(Neck_Rect, Img_rgb.rows, Img_rgb.cols);
+		// Checking in ROI if Scarf is found around the Neck
+		Scarf_around_Neck = is_scarf_around_neck();
+
+		// Filling return vars
+		output[0] = Dist_MS;
+		output[1] = Scarf_around_Neck;
+
 	}
 	else if (!There_Is_Marker and ! There_Is_Scarf)
-		Dist_MS = -2;
+		output[0] = -2;
 	else if (!There_Is_Marker)
-		Dist_MS = -3;
+		output[0] = -3;
 	else if (!There_Is_Scarf)
-		Dist_MS = -4;
+		output[0] = -4;
 
 	//New image processed
 	Img_Refreshed = true;
-
-	return Dist_MS;
 
 }
 
@@ -142,9 +202,8 @@ void CheckScarf::draw_info()
 {
 
 	if (!Img_Refreshed) {
-		std::
-		    cout << "Before Draw refresh Image!! check_scarf()" << std::
-		    endl;
+		std::cout << "Before Draw refresh Image!! check_scarf()" <<
+		    std::endl;
 		return;
 	}
 
@@ -162,6 +221,22 @@ void CheckScarf::draw_info()
 			cv::Point(Marker_Centroid.U + 5,
 				  Marker_Centroid.V + Dist_MS / 2),
 			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
+
+		// Area to check if Scarf is around the neck
+		cv::rectangle(Img_rgb, Neck_Rect, 0, 2, 8, 0);
+		// Scarf around or not the neck
+		ss.str("");
+		if (Scarf_around_Neck)
+			ss << "Scarf is around the Neck";
+		else
+			ss << "Scarf is NOT around the Neck";
+		cv::Size textsize =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
+		cv::Point org((Img_rgb.cols - textsize.width),
+			      (Img_rgb.rows - textsize.height));
+		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 0.75,
+			0, 2, 8, false);
+
 	}
 	else if (!There_Is_Marker and ! There_Is_Scarf) {
 		std::stringstream ss;
@@ -196,7 +271,7 @@ void CheckScarf::draw_info()
 
 	// Show image thresholded 
 	cv::imshow("Thresholded Image Mark", Img_thres_Marker);
-	cv::imshow("Thresholded Image Polo", Img_thres_Scarf);
+	cv::imshow("Thresholded Image Scarf", Img_thres_Scarf);
 
 	// Show Original image with drawing
 	cv::imshow("Original", Img_rgb);
