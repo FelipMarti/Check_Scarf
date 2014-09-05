@@ -24,3 +24,6 @@
 bin
 build
 doc
+
+# ~ random files
+~*
