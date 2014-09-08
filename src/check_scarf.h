@@ -18,7 +18,9 @@ class CheckScarf {
 	// Distance between marker and scarf
 	int Dist_MS;
 	// Neck Area
-	 cv::Rect Neck_Rect;
+	cv::Rect Neck_Rect;
+	cv::Rect Left_Rect;
+	cv::Rect Right_Rect;
 
 	// Images
 	 cv::Mat Img_rgb;
@@ -29,6 +31,8 @@ class CheckScarf {
 	bool There_Is_Marker;
 	bool There_Is_Scarf;
 	bool Scarf_around_Neck;
+	bool End_Scarf_Hangs_Left;
+	bool End_Scarf_Hangs_Right;
 	bool Img_Refreshed;
 
 	// Functions
@@ -36,6 +40,7 @@ class CheckScarf {
 	void image_color_segmentation(int const HSV[6],
 				      cv::Mat & imgThresholded);
 	bool is_scarf_around_neck();
+	bool does_scarf_end_hang(cv::Rect const &R);
 
  public:
 

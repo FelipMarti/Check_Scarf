@@ -72,16 +72,20 @@ void calc_centroid(cv::Mat & I, int &Cu, int &Cv)
 
 }
 
-void Check_Rect_Values(cv::Rect Neck_Rect, int rows, int cols)
+void Check_Rect_Values(cv::Rect &R, int rows, int cols)
 {
-	if (Neck_Rect.x < 0)
-		Neck_Rect.x = 0;
-	if (Neck_Rect.y < 0)
-		Neck_Rect.y = 0;
-	if (Neck_Rect.width > cols)
-		Neck_Rect.width = cols;
-	if (Neck_Rect.height > rows)
-		Neck_Rect.height = rows;
+	if (R.x < 0) {
+		R.width=R.width+R.x;
+		R.x = 0;
+	}
+	if (R.y < 0) {
+		R.height=R.height+R.y;
+		R.y = 0;
+	}
+	if (R.x+R.width > cols)
+		R.width = cols-R.x;
+	if (R.y+R.height > rows)
+		R.height = rows-R.y;
 }
 
 int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
@@ -141,6 +145,49 @@ bool CheckScarf::is_scarf_around_neck()
 
 }
 
+bool CheckScarf::does_scarf_end_hang(cv::Rect const &R)
+{
+
+	int nRows = R.y + R.height;
+	int channels = Img_thres_Scarf.channels();
+	int nCols = (R.x + R.width) * channels;
+	bool trobat = false;
+	int i = R.x;
+
+	// Trying to find a stright Vertical white line
+	Centroid Max_length;
+	Max_length.U=R.x;
+	Max_length.V=R.y;
+	while (i < nCols and ! trobat) {
+		int j = R.y;
+		bool black_px = false;
+
+		while (j < nRows and ! trobat and ! black_px) {
+			if (Img_thres_Scarf.at<uchar>(j,i) == 0)
+				black_px = true;
+			Img_thres_Scarf.at<uchar>(j,i)=128;		//To Debug
+			j++;
+		}
+
+		if (j-1>Max_length.V) {
+			Max_length.U=i;
+			Max_length.V=j;
+		}
+
+		if (j==nRows)
+			trobat = true;
+
+		i++;
+	}
+
+	if (Max_length.V > R.y) trobat=true;
+
+	return trobat;
+
+}
+
+
+
 void CheckScarf::check_scarf(std::vector < int >&output)
 {
 	// Colors definition 
@@ -180,6 +227,29 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 		Check_Rect_Values(Neck_Rect, Img_rgb.rows, Img_rgb.cols);
 		// Checking in ROI if Scarf is found around the Neck
 		Scarf_around_Neck = is_scarf_around_neck();
+
+		//Checking if Ends of scarf hang (left)
+		// Init neck ROI
+		Left_Rect.x = Marker_Centroid.U - 140;
+		Left_Rect.y = Marker_Centroid.V + 130;
+		Left_Rect.width = 100;
+		Left_Rect.height = Img_rgb.rows-Left_Rect.y;
+		// Check if ROI is OK to Prevent segmentation fault
+		Check_Rect_Values(Left_Rect, Img_rgb.rows, Img_rgb.cols);
+		// Checking in ROI if Scarf is hanging left 
+		End_Scarf_Hangs_Left=does_scarf_end_hang(Left_Rect);
+
+		//Checking if Ends of scarf hang (right)
+		// Init neck ROI
+		Right_Rect.x = Marker_Centroid.U + 40;
+		Right_Rect.y = Marker_Centroid.V + 130;
+		Right_Rect.width = 100;
+		Right_Rect.height = Img_rgb.rows-Left_Rect.y;
+		// Check if ROI is OK to Prevent segmentation fault
+		Check_Rect_Values(Right_Rect, Img_rgb.rows, Img_rgb.cols);
+		// Checking in ROI if Scarf is hanging right
+		End_Scarf_Hangs_Right=does_scarf_end_hang(Right_Rect);
+
 
 		// Filling return vars
 		output[0] = Dist_MS;
@@ -236,6 +306,37 @@ void CheckScarf::draw_info()
 			      (Img_rgb.rows - textsize.height));
 		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
+
+		// Area to check if ends of scarf hang left (image)
+		cv::rectangle(Img_rgb, Left_Rect, 0, 2, 8, 0);
+		// Scarf is hanging or not on the left side 
+		ss.str("");
+		if (End_Scarf_Hangs_Left)
+			ss << "End left Scarf is hanging";
+		else
+			ss << "End left Scarf is NOT hanging";
+		cv::Size textsizeL =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
+		cv::Point orgL((Img_rgb.cols - textsizeL.width),
+			      (Img_rgb.rows - textsizeL.height-25));
+		putText(Img_rgb, ss.str(), orgL, cv::FONT_HERSHEY_SIMPLEX, 0.75,
+			0, 2, 8, false);
+
+		// Area to check if ends of scarf hang right (image)
+		cv::rectangle(Img_rgb, Right_Rect, 0, 2, 8, 0);
+		// Scarf is hanging or not on the right side 
+		ss.str("");
+		if (End_Scarf_Hangs_Right)
+			ss << "End right Scarf is hanging";
+		else
+			ss << "End right Scarf is NOT hanging";
+		cv::Size textsizeR =
+		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
+		cv::Point orgR((Img_rgb.cols - textsizeR.width),
+			      (Img_rgb.rows - textsizeR.height-50));
+		putText(Img_rgb, ss.str(), orgR, cv::FONT_HERSHEY_SIMPLEX, 0.75,
+			0, 2, 8, false);
+
 
 	}
 	else if (!There_Is_Marker and ! There_Is_Scarf) {
