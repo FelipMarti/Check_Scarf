@@ -13,14 +13,22 @@ class CheckScarf {
 		int V;
 	};
 
-	// Markers centroid
+	// Marker's centroid
 	Centroid Marker_Centroid;
 	// Distance between marker and scarf
 	int Dist_MS;
+	// Distance Hanging left end scarf 
+	int Dist_HLS;
+	Centroid Max_Hanging_L_point;
+	// Distance Hanging right end scarf
+	int Dist_HRS;
+	Centroid Max_Hanging_R_point;
 	// Neck Area
-	cv::Rect Neck_Rect;
-	cv::Rect Left_Rect;
-	cv::Rect Right_Rect;
+	 cv::Rect Neck_Rect;
+	// Scarf left hanging area
+	 cv::Rect Left_Rect;
+	// Scarf Right hanging area
+	 cv::Rect Right_Rect;
 
 	// Images
 	 cv::Mat Img_rgb;
@@ -40,13 +48,13 @@ class CheckScarf {
 	void image_color_segmentation(int const HSV[6],
 				      cv::Mat & imgThresholded);
 	bool is_scarf_around_neck();
-	bool does_scarf_end_hang(cv::Rect const &R);
+	bool does_scarf_end_hang(cv::Rect const &R, Centroid & C);
 
  public:
 
 	 CheckScarf();
 	~CheckScarf();
-	void check_scarf(std::vector<int> &v);
+	void check_scarf(std::vector < int >&v);
 	void draw_info();
 	int wait_any_key();
 	int wait(int ms);

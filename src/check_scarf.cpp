@@ -4,10 +4,18 @@ CheckScarf::CheckScarf()
 {
 	Marker_Centroid.U = -1;
 	Marker_Centroid.V = -1;
+
+	// Init Distances
 	Dist_MS = -1;
+	Dist_HLS = -1;
+	Dist_HRS = -1;
+
+	// Init bools
 	There_Is_Marker = false;
 	There_Is_Scarf = false;
 	Scarf_around_Neck = false;
+	End_Scarf_Hangs_Left = false;
+	End_Scarf_Hangs_Right = false;
 	Img_Refreshed = false;
 }
 
@@ -21,7 +29,7 @@ void CheckScarf::capture_image()
 	// Capture the video from web cam
 	cv::VideoCapture cap(0);
 
-	// If not success, exit program
+	// Open the camera 
 	while (!cap.isOpened())
 		std::cout << "Cannot open the web cam" << std::endl;
 
@@ -61,41 +69,34 @@ void CheckScarf::image_color_segmentation(int const HSV[6],
 
 void calc_centroid(cv::Mat & I, int &Cu, int &Cv)
 {
-
 	/// Calc moments of the image to find centroid. 
 	cv::Moments ObjMoments = cv::moments(I);
 	//Position of the cropped image, so offset added
 	Cu = (int)(ObjMoments.m10 / ObjMoments.m00);	//U 
 	Cv = (int)(ObjMoments.m01 / ObjMoments.m00);	//V 
-
-	cv::circle(I, cv::Point(Cu, Cv), 5, cv::Scalar(128, 128, 128), 2, 8, 0);
-
 }
 
-void Check_Rect_Values(cv::Rect &R, int rows, int cols)
+void Check_Rect_Values(cv::Rect & R, int rows, int cols)
 {
+	// Check the Rect is inside of the image dimensions
 	if (R.x < 0) {
-		R.width=R.width+R.x;
+		R.width = R.width + R.x;
 		R.x = 0;
 	}
 	if (R.y < 0) {
-		R.height=R.height+R.y;
+		R.height = R.height + R.y;
 		R.y = 0;
 	}
-	if (R.x+R.width > cols)
-		R.width = cols-R.x;
-	if (R.y+R.height > rows)
-		R.height = rows-R.y;
+	if (R.x + R.width > cols)
+		R.width = cols - R.x;
+	if (R.y + R.height > rows)
+		R.height = rows - R.y;
 }
 
 int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 {
-	calc_centroid(I_M, Cu, Cv);
-
+	// Calc Verical distance between marker and scarf
 	int nRows = I_S.rows;
-	//int channels = I_S.channels();
-	//int nCols = I_S.cols * channels;
-
 	int i = Cv;
 	bool trobat = false;
 	uchar *p;
@@ -105,17 +106,13 @@ int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 		i++;
 	}
 
-	//Return distance or -1 if scarf is not found
-	if (i == nRows)
-		return -1;
-	else
-		return i - Cv;
+	return i - Cv;
 
 }
 
 bool CheckScarf::is_scarf_around_neck()
 {
-
+	// Check if Scarf is around the neck
 	int nRows = Neck_Rect.y + Neck_Rect.height;
 	int channels = Img_thres_Scarf.channels();
 	int nCols = (Neck_Rect.x + Neck_Rect.width) * channels;
@@ -145,7 +142,7 @@ bool CheckScarf::is_scarf_around_neck()
 
 }
 
-bool CheckScarf::does_scarf_end_hang(cv::Rect const &R)
+bool CheckScarf::does_scarf_end_hang(cv::Rect const &R, Centroid & C)
 {
 
 	int nRows = R.y + R.height;
@@ -155,41 +152,40 @@ bool CheckScarf::does_scarf_end_hang(cv::Rect const &R)
 	int i = R.x;
 
 	// Trying to find a stright Vertical white line
-	Centroid Max_length;
-	Max_length.U=R.x;
-	Max_length.V=R.y;
+	C.U = R.x;
+	C.V = R.y;
 	while (i < nCols and ! trobat) {
 		int j = R.y;
 		bool black_px = false;
 
 		while (j < nRows and ! trobat and ! black_px) {
-			if (Img_thres_Scarf.at<uchar>(j,i) == 0)
+			if (Img_thres_Scarf.at < uchar > (j, i) == 0)
 				black_px = true;
-			Img_thres_Scarf.at<uchar>(j,i)=128;		//To Debug
+			Img_thres_Scarf.at < uchar > (j, i) = 128;	//To Debug
 			j++;
 		}
 
-		if (j-1>Max_length.V) {
-			Max_length.U=i;
-			Max_length.V=j;
+		if (j - 1 > C.V) {
+			C.U = i;
+			C.V = j;
 		}
 
-		if (j==nRows)
+		if (j == nRows)
 			trobat = true;
 
 		i++;
 	}
 
-	if (Max_length.V > R.y) trobat=true;
+	if (C.V > R.y)
+		trobat = true;
 
 	return trobat;
 
 }
 
-
-
 void CheckScarf::check_scarf(std::vector < int >&output)
 {
+
 	// Colors definition 
 	int const Colors_HSV_Detect[2][6] = {	//LowH HighH LowS HighS LowV HighV
 		149, 179, 0, 255, 160, 255,	//Marker Fucsia 
@@ -197,7 +193,7 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 	};
 
 	// Init output var
-	output.resize(2);
+	output.resize(7);
 
 	// Capturing camera image 
 	capture_image();
@@ -211,11 +207,9 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 	// Processing Image 
 	if (There_Is_Marker and There_Is_Scarf) {
 
-		// Vertical Marker-Scarf distance
-		Dist_MS =
-		    calc_mark_scarf_distance(Img_thres_Marker, Img_thres_Scarf,
-					     Marker_Centroid.U,
-					     Marker_Centroid.V);
+		/// Calc marker centroid
+		calc_centroid(Img_thres_Marker, Marker_Centroid.U,
+			      Marker_Centroid.V);
 
 		/// Checking if Scarf is around the Neck
 		// Init neck ROI
@@ -228,32 +222,57 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 		// Checking in ROI if Scarf is found around the Neck
 		Scarf_around_Neck = is_scarf_around_neck();
 
+		// Vertical Marker-Scarf distance
+		if (Scarf_around_Neck) {
+			Dist_MS =
+			    calc_mark_scarf_distance(Img_thres_Marker,
+						     Img_thres_Scarf,
+						     Marker_Centroid.U,
+						     Marker_Centroid.V);
+		}
+		else
+			Dist_MS = -1;
+
 		//Checking if Ends of scarf hang (left)
 		// Init neck ROI
 		Left_Rect.x = Marker_Centroid.U - 140;
-		Left_Rect.y = Marker_Centroid.V + 130;
-		Left_Rect.width = 100;
-		Left_Rect.height = Img_rgb.rows-Left_Rect.y;
+		Left_Rect.y = Marker_Centroid.V + 150;
+		Left_Rect.width = 120;
+		Left_Rect.height = Img_rgb.rows - Left_Rect.y;
 		// Check if ROI is OK to Prevent segmentation fault
 		Check_Rect_Values(Left_Rect, Img_rgb.rows, Img_rgb.cols);
 		// Checking in ROI if Scarf is hanging left 
-		End_Scarf_Hangs_Left=does_scarf_end_hang(Left_Rect);
+		End_Scarf_Hangs_Left =
+		    does_scarf_end_hang(Left_Rect, Max_Hanging_L_point);
+		if (End_Scarf_Hangs_Left)
+			Dist_HLS = Max_Hanging_L_point.V - Left_Rect.y;
+		else
+			Dist_HLS = -1;
 
 		//Checking if Ends of scarf hang (right)
 		// Init neck ROI
-		Right_Rect.x = Marker_Centroid.U + 40;
-		Right_Rect.y = Marker_Centroid.V + 130;
-		Right_Rect.width = 100;
-		Right_Rect.height = Img_rgb.rows-Left_Rect.y;
+		Right_Rect.x = Marker_Centroid.U + 20;
+		Right_Rect.y = Marker_Centroid.V + 150;
+		Right_Rect.width = 120;
+		Right_Rect.height = Img_rgb.rows - Left_Rect.y;
 		// Check if ROI is OK to Prevent segmentation fault
 		Check_Rect_Values(Right_Rect, Img_rgb.rows, Img_rgb.cols);
 		// Checking in ROI if Scarf is hanging right
-		End_Scarf_Hangs_Right=does_scarf_end_hang(Right_Rect);
-
+		End_Scarf_Hangs_Right =
+		    does_scarf_end_hang(Right_Rect, Max_Hanging_R_point);
+		if (End_Scarf_Hangs_Left)
+			Dist_HRS = Max_Hanging_R_point.V - Right_Rect.y;
+		else
+			Dist_HRS = -1;
 
 		// Filling return vars
-		output[0] = Dist_MS;
+		output[0] = 0;
 		output[1] = Scarf_around_Neck;
+		output[2] = Dist_MS;
+		output[3] = End_Scarf_Hangs_Left;
+		output[4] = Dist_HLS;
+		output[5] = End_Scarf_Hangs_Right;
+		output[6] = Dist_HRS;
 
 	}
 	else if (!There_Is_Marker and ! There_Is_Scarf)
@@ -280,22 +299,11 @@ void CheckScarf::draw_info()
 	/// Little bit of drawing to have some feedback
 
 	if (There_Is_Marker and There_Is_Scarf) {
-		// Distance Mark to Scarf
-		cv::line(Img_rgb,
-			 cv::Point(Marker_Centroid.U, Marker_Centroid.V),
-			 cv::Point(Marker_Centroid.U,
-				   Marker_Centroid.V + Dist_MS), 0, 2, 8, 0);
-		std::stringstream ss;
-		ss << Dist_MS << "px";
-		putText(Img_rgb, ss.str(),
-			cv::Point(Marker_Centroid.U + 5,
-				  Marker_Centroid.V + Dist_MS / 2),
-			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 		// Area to check if Scarf is around the neck
 		cv::rectangle(Img_rgb, Neck_Rect, 0, 2, 8, 0);
 		// Scarf around or not the neck
-		ss.str("");
+		std::stringstream ss;
 		if (Scarf_around_Neck)
 			ss << "Scarf is around the Neck";
 		else
@@ -306,6 +314,18 @@ void CheckScarf::draw_info()
 			      (Img_rgb.rows - textsize.height));
 		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
+
+		// Distance Mark to Scarf
+		cv::line(Img_rgb,
+			 cv::Point(Marker_Centroid.U, Marker_Centroid.V),
+			 cv::Point(Marker_Centroid.U,
+				   Marker_Centroid.V + Dist_MS), 0, 2, 8, 0);
+		ss.str("");
+		ss << Dist_MS << "px";
+		putText(Img_rgb, ss.str(),
+			cv::Point(Marker_Centroid.U + 5,
+				  Marker_Centroid.V + Dist_MS / 2),
+			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 		// Area to check if ends of scarf hang left (image)
 		cv::rectangle(Img_rgb, Left_Rect, 0, 2, 8, 0);
@@ -318,9 +338,22 @@ void CheckScarf::draw_info()
 		cv::Size textsizeL =
 		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
 		cv::Point orgL((Img_rgb.cols - textsizeL.width),
-			      (Img_rgb.rows - textsizeL.height-25));
+			       (Img_rgb.rows - textsizeL.height - 25));
 		putText(Img_rgb, ss.str(), orgL, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
+
+		// Distance hanging left side
+		cv::line(Img_rgb,
+			 cv::Point(Max_Hanging_L_point.U,
+				   Max_Hanging_L_point.V - Dist_HLS),
+			 cv::Point(Max_Hanging_L_point.U,
+				   Max_Hanging_L_point.V), 0, 2, 8, 0);
+		ss.str("");
+		ss << Dist_HLS << "px";
+		putText(Img_rgb, ss.str(),
+			cv::Point(Max_Hanging_L_point.U + 5,
+				  Max_Hanging_L_point.V - Dist_HLS / 2),
+			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 		// Area to check if ends of scarf hang right (image)
 		cv::rectangle(Img_rgb, Right_Rect, 0, 2, 8, 0);
@@ -333,10 +366,22 @@ void CheckScarf::draw_info()
 		cv::Size textsizeR =
 		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
 		cv::Point orgR((Img_rgb.cols - textsizeR.width),
-			      (Img_rgb.rows - textsizeR.height-50));
+			       (Img_rgb.rows - textsizeR.height - 50));
 		putText(Img_rgb, ss.str(), orgR, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
 
+		// Distance hanging right side
+		cv::line(Img_rgb,
+			 cv::Point(Max_Hanging_R_point.U,
+				   Max_Hanging_R_point.V - Dist_HRS),
+			 cv::Point(Max_Hanging_R_point.U,
+				   Max_Hanging_R_point.V), 0, 2, 8, 0);
+		ss.str("");
+		ss << Dist_HRS << "px";
+		putText(Img_rgb, ss.str(),
+			cv::Point(Max_Hanging_R_point.U + 5,
+				  Max_Hanging_R_point.V - Dist_HRS / 2),
+			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 	}
 	else if (!There_Is_Marker and ! There_Is_Scarf) {
