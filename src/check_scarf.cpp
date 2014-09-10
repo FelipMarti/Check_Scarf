@@ -189,7 +189,7 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 	// Colors definition 
 	int const Colors_HSV_Detect[2][6] = {	//LowH HighH LowS HighS LowV HighV
 		149, 179, 0, 255, 160, 255,	//Marker Fucsia 
-		25, 45, 100, 255, 40, 200	//Scarf Green 
+		25, 45, 125, 255, 40, 200	//Scarf Green 
 	};
 
 	// Init output var
