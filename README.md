@@ -14,7 +14,7 @@ Done at IRI:
 
 
 ## How to Install
-* git clone  https://github.com/FelipMarti/Check_Scarf.git`
+* `git clone  https://github.com/FelipMarti/Check_Scarf.git`
 * `cd Check_Scarf`
 * `mkdir build`
 * `cd build`
@@ -24,8 +24,8 @@ Done at IRI:
 
 
 ## How to Use
-Please check the following example:
-https://github.com/FelipMarti/Check_Scarf/blob/master/src/examples/check_scarf_test.cpp
+Please check the following code example:
+* https://github.com/FelipMarti/Check_Scarf/blob/master/src/examples/check_scarf_test.cpp
 
 
 ## Examples 
