@@ -260,7 +260,7 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 		// Checking in ROI if Scarf is hanging right
 		End_Scarf_Hangs_Right =
 		    does_scarf_end_hang(Right_Rect, Max_Hanging_R_point);
-		if (End_Scarf_Hangs_Left)
+		if (End_Scarf_Hangs_Right)
 			Dist_HRS = Max_Hanging_R_point.V - Right_Rect.y;
 		else
 			Dist_HRS = -1;
