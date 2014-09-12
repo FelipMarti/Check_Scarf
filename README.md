@@ -30,5 +30,8 @@ Please check the following code example:
 
 ## Examples 
 
-![Alt text](images/input/img_01.jpg?raw=true "Example Input 1")
+Input Image | Output Image
+------------ | -------------
+![Alt text](images/input/img_01.jpg?raw=true "Example Input 1") | ![Alt text](images/output/img_out_01.jpg?raw=true "Example Output 1")
+
 
