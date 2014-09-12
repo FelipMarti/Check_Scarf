@@ -14,10 +14,10 @@ class CheckScarf {
 	};
 
 	// HSV Marker Color
-	std::vector <int> Colors_HSV_Marker;
+	 std::vector < int >Colors_HSV_Marker;
 
 	// HSV Scarf Color
-	std::vector <int> Colors_HSV_Scarf;
+	 std::vector < int >Colors_HSV_Scarf;
 
 	// Marker's centroid
 	Centroid Marker_Centroid;
@@ -51,7 +51,7 @@ class CheckScarf {
 
 	// Functions
 	void capture_image();
-	void image_color_segmentation(std::vector <int> HSV,
+	void image_color_segmentation(std::vector < int >HSV,
 				      cv::Mat & imgThresholded);
 	bool is_scarf_around_neck();
 	bool does_scarf_end_hang(cv::Rect const &R, Centroid & C);
@@ -60,7 +60,7 @@ class CheckScarf {
 
 	 CheckScarf();
 	~CheckScarf();
-	void set_HSV_Color (bool const Marker, int const HSV[6]);
+	void set_HSV_Color(bool const Marker, int const HSV[6]);
 	void check_scarf(std::vector < int >&v);
 	void draw_info();
 	int wait_any_key();

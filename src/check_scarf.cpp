@@ -44,7 +44,7 @@ void CheckScarf::capture_image()
 
 }
 
-void CheckScarf::image_color_segmentation(std::vector <int> HSV,
+void CheckScarf::image_color_segmentation(std::vector < int >HSV,
 					  cv::Mat & imgThresholded)
 {
 
@@ -114,26 +114,27 @@ int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 
 }
 
-void CheckScarf::set_HSV_Color (bool const Marker, int const HSV[6]) {
-	
+void CheckScarf::set_HSV_Color(bool const Marker, int const HSV[6])
+{
+
 	// Fuction to set marker and scarf color HSV values
 	if (Marker) {
 		// LowH HighH LowS HighS LowV HighV
-		Colors_HSV_Marker[0]=HSV[0];
-		Colors_HSV_Marker[1]=HSV[1];
-		Colors_HSV_Marker[2]=HSV[2];
-		Colors_HSV_Marker[3]=HSV[3];
-		Colors_HSV_Marker[4]=HSV[4];
-		Colors_HSV_Marker[5]=HSV[5];
+		Colors_HSV_Marker[0] = HSV[0];
+		Colors_HSV_Marker[1] = HSV[1];
+		Colors_HSV_Marker[2] = HSV[2];
+		Colors_HSV_Marker[3] = HSV[3];
+		Colors_HSV_Marker[4] = HSV[4];
+		Colors_HSV_Marker[5] = HSV[5];
 	}
 	else {
 		// LowH HighH LowS HighS LowV HighV
-		Colors_HSV_Scarf[0]=HSV[0];
-		Colors_HSV_Scarf[1]=HSV[1];
-		Colors_HSV_Scarf[2]=HSV[2];
-		Colors_HSV_Scarf[3]=HSV[3];
-		Colors_HSV_Scarf[4]=HSV[4];
-		Colors_HSV_Scarf[5]=HSV[5];
+		Colors_HSV_Scarf[0] = HSV[0];
+		Colors_HSV_Scarf[1] = HSV[1];
+		Colors_HSV_Scarf[2] = HSV[2];
+		Colors_HSV_Scarf[3] = HSV[3];
+		Colors_HSV_Scarf[4] = HSV[4];
+		Colors_HSV_Scarf[5] = HSV[5];
 	}
 
 }
@@ -323,7 +324,7 @@ void CheckScarf::draw_info()
 	if (There_Is_Marker and There_Is_Scarf) {
 
 		// Area to check if Scarf is around the neck
-		cv::rectangle(Img_rgb, Neck_Rect, 0, 2, 8, 0);
+		//cv::rectangle(Img_rgb, Neck_Rect, 0, 2, 8, 0);
 		// Scarf around or not the neck
 		std::stringstream ss;
 		if (Scarf_around_Neck)
@@ -333,7 +334,7 @@ void CheckScarf::draw_info()
 		cv::Size textsize =
 		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
 		cv::Point org((Img_rgb.cols - textsize.width),
-			      (Img_rgb.rows - textsize.height));
+			      (textsize.height));
 		putText(Img_rgb, ss.str(), org, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
 
@@ -350,7 +351,7 @@ void CheckScarf::draw_info()
 			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 		// Area to check if ends of scarf hang left (image)
-		cv::rectangle(Img_rgb, Left_Rect, 0, 2, 8, 0);
+		//cv::rectangle(Img_rgb, Left_Rect, 0, 2, 8, 0);
 		// Scarf is hanging or not on the left side 
 		ss.str("");
 		if (End_Scarf_Hangs_Left)
@@ -360,7 +361,7 @@ void CheckScarf::draw_info()
 		cv::Size textsizeL =
 		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
 		cv::Point orgL((Img_rgb.cols - textsizeL.width),
-			       (Img_rgb.rows - textsizeL.height - 25));
+			       (textsizeL.height + 25));
 		putText(Img_rgb, ss.str(), orgL, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
 
@@ -378,7 +379,7 @@ void CheckScarf::draw_info()
 			cv::FONT_HERSHEY_SIMPLEX, 1, 0, 2, 8, false);
 
 		// Area to check if ends of scarf hang right (image)
-		cv::rectangle(Img_rgb, Right_Rect, 0, 2, 8, 0);
+		//cv::rectangle(Img_rgb, Right_Rect, 0, 2, 8, 0);
 		// Scarf is hanging or not on the right side 
 		ss.str("");
 		if (End_Scarf_Hangs_Right)
@@ -388,7 +389,7 @@ void CheckScarf::draw_info()
 		cv::Size textsizeR =
 		    getTextSize(ss.str(), cv::FONT_HERSHEY_SIMPLEX, 0.75, 2, 0);
 		cv::Point orgR((Img_rgb.cols - textsizeR.width),
-			       (Img_rgb.rows - textsizeR.height - 50));
+			       (textsizeR.height + 50));
 		putText(Img_rgb, ss.str(), orgR, cv::FONT_HERSHEY_SIMPLEX, 0.75,
 			0, 2, 8, false);
 
