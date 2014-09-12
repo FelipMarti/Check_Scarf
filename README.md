@@ -32,6 +32,6 @@ Please check the following code example:
 
 Input Image | Output Image
 ------------ | -------------
-![Alt text](images/input/img_01.jpg?raw=true "Example Input 1") | ![Alt text](images/output/img_out_01.jpg?raw=true "Example Output 1")
+<a href="url"><img src="images/output/img_01.jpg?raw=true" align="left" height="360" width="480" ></a> | <a href="url"><img src="images/output/img_out_01.jpg?raw=true" align="left" height="360" width="480" ></a>
 
 
