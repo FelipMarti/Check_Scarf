@@ -9,6 +9,16 @@ int main(int argc, char *argv[])
 
 	while (true) {
 
+		// Set Marker Color
+						// LowH HighH LowS HighS LowV HighV
+		int HSV_Marker[6] = {149, 179, 0, 255, 160, 255};
+		c.set_HSV_Color(true,HSV_Marker);
+
+		// Set Scarf Color
+						// LowH HighH LowS HighS LowV HighV
+		int HSV_Scarf[6] = {25, 45, 125, 255, 40, 200};
+		c.set_HSV_Color(false,HSV_Scarf);
+
 		// Output var is a vector
 		std::vector < int >v;
 		// Check scarf 
