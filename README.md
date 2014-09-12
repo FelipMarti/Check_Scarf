@@ -30,4 +30,5 @@ Please check the following code example:
 
 ## Examples 
 
+![Alt text](images/input/img_01.jpg?raw=true "Example Input 1")
 
