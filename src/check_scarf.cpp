@@ -17,6 +17,10 @@ CheckScarf::CheckScarf()
 	End_Scarf_Hangs_Left = false;
 	End_Scarf_Hangs_Right = false;
 	Img_Refreshed = false;
+
+	// HSV Colors
+	Colors_HSV_Marker.resize(6);
+	Colors_HSV_Scarf.resize(6);
 }
 
 CheckScarf::~CheckScarf()
@@ -40,7 +44,7 @@ void CheckScarf::capture_image()
 
 }
 
-void CheckScarf::image_color_segmentation(int const HSV[6],
+void CheckScarf::image_color_segmentation(std::vector <int> HSV,
 					  cv::Mat & imgThresholded)
 {
 
@@ -107,6 +111,30 @@ int calc_mark_scarf_distance(cv::Mat & I_M, cv::Mat & I_S, int &Cu, int &Cv)
 	}
 
 	return i - Cv;
+
+}
+
+void CheckScarf::set_HSV_Color (bool const Marker, int const HSV[6]) {
+	
+	// Fuction to set marker and scarf color HSV values
+	if (Marker) {
+		// LowH HighH LowS HighS LowV HighV
+		Colors_HSV_Marker[0]=HSV[0];
+		Colors_HSV_Marker[1]=HSV[1];
+		Colors_HSV_Marker[2]=HSV[2];
+		Colors_HSV_Marker[3]=HSV[3];
+		Colors_HSV_Marker[4]=HSV[4];
+		Colors_HSV_Marker[5]=HSV[5];
+	}
+	else {
+		// LowH HighH LowS HighS LowV HighV
+		Colors_HSV_Scarf[0]=HSV[0];
+		Colors_HSV_Scarf[1]=HSV[1];
+		Colors_HSV_Scarf[2]=HSV[2];
+		Colors_HSV_Scarf[3]=HSV[3];
+		Colors_HSV_Scarf[4]=HSV[4];
+		Colors_HSV_Scarf[5]=HSV[5];
+	}
 
 }
 
@@ -186,12 +214,6 @@ bool CheckScarf::does_scarf_end_hang(cv::Rect const &R, Centroid & C)
 void CheckScarf::check_scarf(std::vector < int >&output)
 {
 
-	// Colors definition 
-	int const Colors_HSV_Detect[2][6] = {	//LowH HighH LowS HighS LowV HighV
-		149, 179, 0, 255, 160, 255,	//Marker Fucsia 
-		25, 45, 125, 255, 40, 200	//Scarf Green 
-	};
-
 	// Init output var
 	output.resize(7);
 
@@ -199,9 +221,9 @@ void CheckScarf::check_scarf(std::vector < int >&output)
 	capture_image();
 
 	// Color segmentation
-	image_color_segmentation(Colors_HSV_Detect[0], Img_thres_Marker);
+	image_color_segmentation(Colors_HSV_Marker, Img_thres_Marker);
 	There_Is_Marker = (cv::countNonZero(Img_thres_Marker) > 0);
-	image_color_segmentation(Colors_HSV_Detect[1], Img_thres_Scarf);
+	image_color_segmentation(Colors_HSV_Scarf, Img_thres_Scarf);
 	There_Is_Scarf = (cv::countNonZero(Img_thres_Scarf) > 0);
 
 	// Processing Image 
