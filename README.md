@@ -1,7 +1,7 @@
 # Check_Scarf
 
 ## Info
-Computer vision library to check if a scarf is well suited in a mannequin. OpenCV, C++
+Computer vision library to check if a scarf is well suited on a mannequin. OpenCV, C++
 
 The aim of this project is to check the robot performance to reward it. Reinforcement learning
 
